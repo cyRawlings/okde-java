@@ -95,7 +95,7 @@ public class SampleModelTest {
 	@Test
 	public void singleUpdateRandomDataPerformanceTest() throws Exception {
 		
-		final int numberOfSamples = 1000;
+		final int numberOfSamples = 2000;
 		SampleModel sampleModel = createSampleModel(createSamples(createRandomSampleValues(numberOfSamples)));
 		
 		// Test the output

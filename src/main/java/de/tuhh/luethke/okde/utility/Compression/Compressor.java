@@ -213,12 +213,23 @@ public class Compressor {
 		ArrayList<SimpleMatrix> means = dist.getSubMeans();
 		ArrayList<SimpleMatrix> covs = dist.getSubCovariances();
 		ArrayList<Double> weights = dist.getSubWeights();
+		
+		// find the indexes of the two closest components
 		double distance = -1d;
 		int indexComp1 = 0, indexComp2 = 0;
 		for (int i = 0; i < means.size(); i++) {
 			SimpleMatrix mean1 = means.get(i);
-			for (int j = (i + 1); j < means.size(); j++) {
+			jsearch: for (int j = (i + 1); j < means.size(); j++) {
 				SimpleMatrix mean2 = means.get(j);
+				
+				// filter out distances where at least one component element is greater than the current distance
+				// This prevents the object creations required by euclidianDistance().
+				// TODO: hacky - sorting the means would provide a faster solution
+				if (distance != -1.0 && isAnElementDifferenceGreaterThanDistance(mean1, mean2, distance)) {
+					continue jsearch;
+				}
+				
+				
 				double tmpDistance = euclidianDistance(mean1, mean2);
 				if ((distance == -1) | (tmpDistance < distance)) {
 					distance = tmpDistance;
@@ -254,6 +265,23 @@ public class Compressor {
 		dist.getSubDistributions().set(indexComp2, twoCompDist);
 		dist.getSubDistributions().remove(indexComp1);
 		return compressionError;
+	}
+	
+	/**
+	 * A method to filter out instances in which a two matrixes are definitely at least a given distance appart
+	 *
+	 * @return true if there the matrixes are separated by more than the provided distance
+	 */
+	private static boolean isAnElementDifferenceGreaterThanDistance(SimpleMatrix columnVector1, SimpleMatrix columnVector2, double distance) {
+		
+		for (int row = 0; row < columnVector1.numRows(); row++) {
+			for (int col = 0; col < columnVector1.numCols(); col++) {
+				if (Math.abs(columnVector1.get(row, col) - columnVector2.get(row, col)) > distance) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public static double euclidianDistance(SimpleMatrix columnVector1, SimpleMatrix columnVector2) {
